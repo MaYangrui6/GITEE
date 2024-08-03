@@ -1,16 +1,3 @@
-# Copyright (c) 2022 Huawei Technologies Co.,Ltd.
-#
-# openGauss is licensed under Mulan PSL v2.
-# You can use this software according to the terms and conditions of the Mulan PSL v2.
-# You may obtain a copy of Mulan PSL v2 at:
-#
-#          http://license.coscl.org.cn/MulanPSL2
-#
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-# See the Mulan PSL v2 for more details.
-
 import argparse
 import copy
 import json
@@ -174,14 +161,7 @@ def read_input_from_pipe():
 
 
 def get_password():
-    # password = read_input_from_pipe()
-    # if password:
-    #     logging.warning("Read password from pipe.")
-    # else:
-    #     password = getpass.getpass("Password for database user:")
-    # if not password:
-    #     raise ValueError('Please input the password')
-    # return password
+
     return 'postgres'
 
 
@@ -236,10 +216,7 @@ class IndexAdvisor:
 
     def complex_index_advisor(self, candidate_indexes: List[AdvisedIndex]):
         atomic_config_total = generate_sorted_atomic_config(self.workload.get_queries(), candidate_indexes)
-        # same_columns_config = generate_atomic_config_containing_same_columns(candidate_indexes)
-        # for atomic_config in same_columns_config:
-        #     if atomic_config not in atomic_config_total:
-        #         atomic_config_total.append(atomic_config)
+
         if atomic_config_total and len(atomic_config_total[0]) != 0:
             raise ValueError("The empty atomic config isn't generated!")
         for atomic_config in GLOBAL_PROCESS_BAR.process_bar(atomic_config_total, 'Optimal indexes'):
@@ -253,9 +230,6 @@ class IndexAdvisor:
             opt_config = greedy_determine_opt_config(self.workload, atomic_config_total,
                                                      candidate_indexes)
         self.filter_redundant_indexes_with_diff_types(opt_config)
-        # self.filter_same_columns_indexes(opt_config, self.workload)
-        # self.display_detail_info['positive_stmt_count'] = get_positive_sql_count(opt_config,
-        #                                                                          self.workload)
         if len(opt_config) == 0:
             bar_print("No optimal indexes generated!")
             return None
@@ -308,49 +282,6 @@ class IndexAdvisor:
         index_current_storage = 0
         cnt = 0
         for key, index in enumerate(opt_indexes):
-            # sql_optimized = 0
-            # negative_sql_ratio = 0
-            # insert_queries, delete_queries, \
-            # update_queries, select_queries, \
-            # positive_queries, ineffective_queries, \
-            # negative_queries = self.workload.get_index_related_queries(index)
-            # sql_num = self.workload.get_index_sql_num(index)
-            # total_benefit = 0
-            # # Calculate the average benefit of each positive SQL.
-            # for query in positive_queries:
-            #     current_cost = self.workload.get_indexes_cost_of_query(query, (index,))
-            #     origin_cost = self.workload.get_origin_cost_of_query(query)
-            #     sql_optimized += (1 - current_cost / origin_cost) * query.get_frequency()
-            #     benefit = origin_cost - current_cost
-            #     total_benefit += benefit
-            # total_queries_num = sql_num['negative'] + sql_num['ineffective'] + sql_num['positive']
-            # if total_queries_num:
-            #     negative_sql_ratio = sql_num['negative'] / total_queries_num
-            # # Filter the candidate indexes that do not meet the conditions of optimization.
-            # logging.info(f'filter low benefit index for {index}')
-            # if not positive_queries:
-            #     logging.info('filtered: positive_queries not found for the index')
-            #     continue
-            # if sql_optimized / sql_num['positive'] < improved_rate and total_benefit < MAX_BENEFIT_THRESHOLD:
-            #     logging.info(f"filtered: improved_rate {sql_optimized / sql_num['positive']} less than {improved_rate}")
-            #     continue
-            # if sql_optimized / sql_num['positive'] < \
-            #         NEGATIVE_RATIO_THRESHOLD < negative_sql_ratio:
-            #     logging.info(f'filtered: improved_rate {sql_optimized / sql_num["positive"]} < '
-            #                  f'negative_ratio_threshold < negative_sql_ratio {negative_sql_ratio} is not met')
-            #     continue
-            # logging.info(f'{index} has benefit of {self.workload.get_index_benefit(index)}')
-            # if MAX_INDEX_STORAGE and (index_current_storage + index.get_storage()) > MAX_INDEX_STORAGE:
-            #     logging.info('filtered: if add the index {index}, it reaches the max index storage.')
-            #     continue
-            # if MAX_INDEX_NUM and cnt == MAX_INDEX_NUM:
-            #     logging.info('filtered: reach the maximum number for the index.')
-            #     break
-            # if not self.multi_iter_mode and index.benefit <= 0:
-            #     logging.info('filtered: benefit not above 0 for the index.')
-            #     continue
-            # index_current_storage += index.get_storage()
-            # cnt += 1
             self.determine_indexes.append(index)
 
     def print_benefits(self, created_indexes: List[ExistingIndex]):
@@ -780,11 +711,6 @@ def estimate_workload_cost_file(executor, workload, indexes=None):
         index_setting_sqls = get_index_setting_sqls(indexes, is_multi_node(executor))
         hypo_index_ids = parse_hypo_index(executor.execute_sqls(index_setting_sqls))
         update_index_storage(indexes, hypo_index_ids, executor)
-        # costs, index_names, plans = get_workload_costs([query.get_statement() for query in
-        #                                                 workload.get_queries()], executor)
-        # # Update query cost for select queries and positive_pos for indexes.
-        # for cost, query_pos in zip(costs, select_queries_pos):
-        #     query_costs[query_pos] = cost * workload.get_queries()[query_pos].get_frequency()
         index_names = [' '] * len(workload.get_queries())
         plans = [' '] * len(workload.get_queries())
         workload.add_indexes(indexes, query_costs, index_names, plans)
@@ -872,10 +798,6 @@ def get_valid_indexes(advised_indexes, original_base_indexes, statement, executo
     need_check = False
     single_column_indexes = generate_single_column_indexes(advised_indexes)
     single_column_original_base_indexes = generate_single_column_indexes(original_base_indexes)
-    # valid_indexes, cost = query_index_check(executor, statement, single_column_indexes)
-    # valid_indexes = filter_candidate_columns_by_cost(valid_indexes, statement, executor,
-    #                                                  kwargs.get('max_candidate_columns', MAX_CANDIDATE_COLUMNS))
-    # valid_indexes, cost = query_index_check(executor, statement, valid_indexes)
     valid_indexes = single_column_indexes[:]
     _, cost = query_index_check(executor, statement, valid_indexes)
     pre_indexes = valid_indexes[:]
@@ -1142,24 +1064,6 @@ def generate_sorted_atomic_config(queries: List[QueryItem],
                                   candidate_indexes: List[AdvisedIndex]) -> List[Tuple[AdvisedIndex, ...]]:
     atomic_config_total = [()]
 
-    # for query in queries:
-    #     if len(query.get_indexes()) == 0:
-    #         continue
-    #
-    #     indexes = []
-    #     for i, (table, group) in enumerate(groupby(query.get_sorted_indexes(), lambda x: x.get_table())):
-    #     #它按照每个索引所属的表对索引进行分组。它返回一个可迭代的对象，每个元素都是一个 (key, group) 元组，其中 key 是分组的键（这里是表名），group 是该表的索引组成的迭代器
-    #         # The max number of table is 2.
-    #         if i > 1:
-    #             break
-    #         # The max index number for each table is 2.
-    #         indexes.extend(list(group)[:2])
-    #
-    #     atomic_configs = powerset(indexes)
-    #     for new_config in atomic_configs:
-    #         if new_config not in atomic_config_total:
-    #             atomic_config_total.append(new_config)
-    # # Make sure atomic_config_total contains candidate_indexes.
     for index in candidate_indexes:
         if (index,) not in atomic_config_total:
             atomic_config_total.append((index,))
@@ -1327,59 +1231,7 @@ def index_advisor_workload(history_advise_indexes, executor: BaseExecutor, workl
             print(sql.get_statement())
     queries = [query for query in queries if is_valid_statement(executor, query.get_statement())]
     print('query number :',len(queries))
-    #tpcds compress 65
-    # queries_potential_ratio = [0.6734728191300432, 0.3329484019197757, 0.26098465981420405, 0.85734029362694, 0.8331512722010552, 0.9827518239330074, 0.9617979848237385, 0.693295610851269, 0.17386351684534462, 0.8803298379075323, 0.956074677549224, 0.9877583260355965, 0.994718761468775, 0.577681492483308, 0.2659726257342873, 0.5171742263904571, 0.251034381660094, 0.6312136502544863, 0.8614613432102152, 0.3433849917632722, 0.3109011254612766, 0.3419203906450425, 0.5923346152047447, 0.867261902558211, 0.973558669478285, 0.5558501525282323, 0.9693063928317106, 0.39965337995166816, 0.5913628204528013, 0.85768360085898, 0.9573519351992412, 0.861823789049504, 0.6838783619519654, 0.9393264414571613, 0.9078160765166499, 0.4226511152280862, 0.693955739723488, 0.9408534333262217, 0.17994631319160959, 0.9947117902584579, 0.5000136193027793, 0.9398498542729594, 0.7289570448477475, 0.934947289365008, 0.9621813874948445, 0.12372722968358306, 0.4941199399485792, 0.9579208419139372, 0.6907378728775236, 0.706991767192336, 0.9316463829817883, 0.961618496296227, 0.8693647687502196, 0.32828230671906544, 0.3911084899092901, 0.697946229834885, 0.5363773955895892, 0.915215021088601, 0.6796836056371768]
-    # print(len(queries_potential_ratio))
-    # #tpcds compresss 90
-    # queries_potential_ratio = [0.6796836056371768, 0.0018229166494011853, 0.915215021088601, 0.5363773955895892, 0.697946229834885, 0.002331334559764492, 0.3911084899092901, 0.04928321613323049, 0.32828230671906544, 0.8693647687502196, 0.961618496296227, 0.9316463829817883, 0.706991767192336, 0.6907378728775236, 0.9579208419139372, 0.4941199399485792, 0.025940036162507025, 0.12372722968358306, 0.9621813874948445, 0.934947289365008, 0.7289570448477475, 0.035191127431984284, 0.001121132359049605, 0.9398498542729594, 0.10417520723858224, 0.0, 0.5000136193027793, 0.04828699140558239, 0.008111499428730665, 0.9947117902584579, 0.17994631319160959, 0.0004690712673020677, 0.9408534333262217, 0.693955739723488, 0.0024154523660674713, 0.4226511152280862, 0.06069487178152345, 0.028931524286316856, 0.006363172592901393, 0.046340824791803105, 0.9078160765166499, 0.9393264414571613, 0.006215834791945738, 0.6838783619519654, 0.861823789049504, 0.9573519351992412, 0.85768360085898, 0.5913628204528013, 0.39965337995166816, 0.9693063928317106, 0.0, 0.5558501525282323, 0.973558669478285, 0.008361610631637829, 0.867261902558211, 0.5923346152047447, 0.009234989972906027, 0.3419203906450425, 0.0005697977316269894, 0.05785913659655721, 0.3109011254612766, 0.0033426539503578793, 0.3433849917632722, 0.8614613432102152, 0.6312136502544863, 0.02624713557320632, 0.005068093353289871, 0.251034381660094, 0.5171742263904571, 0.2659726257342873, 0.0048583485047965485, 0.577681492483308, 0.03776365116540149, 0.994718761468775, 0.9877583260355965, 0.956074677549224, 0.8803298379075323, 0.03520926059050841, 0.17386351684534462, 0.0015471634141262347, 0.006536479968216075, 0.693295610851269, 0.9617979848237385, 0.9827518239330074, 0.8331512722010552, 0.85734029362694, 0.001481071344560852, 0.26098465981420405, 0.3329484019197757, 0.6734728191300432]
-    # job compress
-    # queries_potential_ratio =[0.9197541321909164, 0.9222090483637448, 0.1749030245467895, 0.9649244436616428, 0.9403875090440058, 0.9591106512741036, 0.9394820315831122, 0.9406520639282502, 0.9407615158435338, 0.9379462852201454, 0.987882806605147, 0.9938461907691178, 0.9879365080737114, 0.8584627606455099, 0.9989543467396982, 0.3363033297034122, 0.33852241542013434, 0.9979858226269471, 0.9974097295196348, 0.9977063444467194, 0.9977811087150249, 0.9975593245685647, 0.9976312222893353, 0.9976464879318174, 0.9976508311999046, 0.9975192053801031, 0.9975062967576221, 0.929939168370466, 0.9934276129517158, 0.9856427489240925, 0.8961332925831322, 0.941126739376424, 0.7568609065181359, 0.6857785864921246, 0.9829741177786676, 0.982921129480395, 0.9788712544970487, 0.996892152747162, 0.9964548398425038, 0.9969737824553256, 0.987645605434161, 0.9873924175081759, 0.9890986288028363, 0.9888048079482419, 0.9192025142392842, 0.9868845467262723, 0.900243248384, 0.9958198278144618, 0.9995172297044329, 0.9965007566293788, 0.9968755224430167, 0.9906828974958161, 0.9865706712803691, 0.9914490868933276, 0.9797074961253405, 0.9966714590576116, 0.9967348587300836, 0.9972533034748597, 0.9891402856015228, 0.987568938282609, 0.9890847552615808, 0.9998517805464231, 0.9999022484390844, 0.9986308926585145, 0.9937967971909409, 0.9947510083341593, 0.9907049901862517, 0.9941716123270722, 0.994058593878701, 0.9908605275075956, 0.9593269519423946, 0.9840682447505492, 0.9610379259273643, 0.8737485896626622, 0.860832126737507, 0.791583657879385, 0.9977476196516962, 0.9989158222518806, 0.9986353008137029, 0.9817344117155582, 0.9976175729012466, 0.9816259403915897, 0.9999338796037174, 0.9999325089462774, 0.97445366481261, 0.9468389307698728, 0.9583671017817397, 0.3808738459386056, 0.3769944815115905, 0.8489218500671704, 0.836137885150319, 0.8042133284805173, 0.7171614916103457]
-    #job 113
-    queries_potential_ratio=  [
-    0.9197541321909164, 0.9222090483637448, 0.1749030245467895, 0.986422365450696,
-    0.9621381331538607, 0.9596583353300498, 0.9602437466272585, 0.9649244436616428,
-    0.9403875090440058, 0.9591106512741036, 0.9394820315831122, 0.9406520639282502,
-    0.9407615158435338, 0.9379462852201454, 0.987882806605147, 0.9938461907691178,
-    0.9879365080737114, 0.8584627606455099, 0.9989543467396982, 0.3363033297034122,
-    0.33852241542013434, 0.9979858226269471, 0.9974097295196348, 0.9977063444467194,
-    0.9977811087150249, 0.9975593245685647, 0.9976312222893353, 0.9976464879318174,
-    0.9976508311999046, 0.9975192053801031, 0.9975062967576221, 0.929939168370466,
-    0.9934276129517158, 0.9856427489240925, 0.8961332925831322, 0.941126739376424,
-    0.7568609065181359, 0.6857785864921246, 0.6745639873464686, 0.6649644670799364,
-    0.6598580605761208, 0.6583520036914308, 0.9829741177786676, 0.982921129480395,
-    0.9788712544970487, 0.996892152747162, 0.9964548398425038, 0.9969737824553256,
-    0.987645605434161, 0.9873924175081759, 0.9890986288028363, 0.9888048079482419,
-    0.9192025142392842, 0.9868845467262723, 0.900243248384, 0.9958198278144618,
-    0.9995172297044329, 0.9965007566293788, 0.9968755224430167, 0.9906828974958161,
-    0.9865706712803691, 0.9914490868933276, 0.9797074961253405, 0.9966714590576116,
-    0.9967348587300836, 0.9972533034748597, 0.9891402856015228, 0.987568938282609,
-    0.9890847552615808, 0.9998517805464231, 0.9999022484390844, 0.9986308926585145,
-    0.986459720367978, 0.9866310931489649, 0.9865490208028532, 0.9863735564807445,
-    0.9937967971909409, 0.9947510083341593, 0.9907049901862517, 0.9941716123270722,
-    0.994058593878701, 0.9908605275075956, 0.9776445797361458, 0.9774416390472663,
-    0.967054302019042, 0.9733722269358573, 0.9640785437402687, 0.9593269519423946,
-    0.9840682447505492, 0.9610379259273643, 0.7982599200106388, 0.9337892136027818,
-    0.8003945096886939, 0.8737485896626622, 0.860832126737507, 0.791583657879385,
-    0.9977476196516962, 0.9989158222518806, 0.9986353008137029, 0.9817344117155582,
-    0.9976175729012466, 0.9816259403915897, 0.9999338796037174, 0.9999325089462774,
-    0.97445366481261, 0.9468389307698728, 0.9583671017817397, 0.3808738459386056,
-    0.3769944815115905, 0.8489218500671704, 0.836137885150319, 0.8042133284805173,
-    0.7171614916103457
-]
-
-    # queries_potential_ratio = [get_query_potential_ratio_from_model1(sql.get_statement()) for sql in queries]
-    # tpch standard
-    # queries_potential_ratio= [
-    # 0.0, 0.011633215425021414, 0.7748713945556839, 0.0, 0.0, 0.0002877057942045127,
-    # 0.4536551635681645, 0.22495602787823257, 0.0, 0.7623701743958906, 0.0003055834791251336,
-    #  0.04254410341045658, 0.01850849524177486, 0.5031595555097437,
-    # 0.96202822976093, 0.6655842514857512]
-    # tpch compress
-    # queries_potential_ratio = [
-    #      0.011633215425021414, 0.7748713945556839,  0.0002877057942045127,
-    #     0.4536551635681645, 0.22495602787823257,  0.7623701743958906, 0.0003055834791251336,
-    #      0.04254410341045658, 0.01850849524177486, 0.5031595555097437,
-    #     0.96202822976093, 0.6655842514857512]
+    queries_potential_ratio = [get_query_potential_ratio_from_model1(sql.get_statement()) for sql in queries]
 
     plans = [pgrunner.getCostPlanJson(sql.get_statement()) for sql in queries]
 
@@ -1419,15 +1271,8 @@ def index_advisor_workload(history_advise_indexes, executor: BaseExecutor, workl
                 opt_indexes = index_advisor.simple_index_advisor(candidate_indexes)
         if opt_indexes:
             index_advisor.filter_low_benefit_index(opt_indexes, kwargs.get('improved_rate', 0))
-            # if index_advisor.determine_indexes:
-            #     estimate_workload_cost_file(executor, workload, tuple(index_advisor.determine_indexes))
-            #     recalculate_cost_for_opt_indexes(workload, tuple(index_advisor.determine_indexes))
-            # determine_indexes = index_advisor.determine_indexes[:]
-            # filter_no_benefit_indexes(index_advisor.determine_indexes)                  #     *************************会过滤不少index
             print('determine_indexes :', index_advisor.determine_indexes, len(index_advisor.determine_indexes))
-            # index_advisor.determine_indexes.sort(key=lambda index: -sum(query.get_benefit()
-            #                                                             for query in index.get_positive_queries()))
-            # workload.replace_indexes(tuple(determine_indexes), tuple(index_advisor.determine_indexes))
+
 
     index_advisor.display_advise_indexes_info(show_detail)
     created_indexes = fetch_created_indexes(executor)
