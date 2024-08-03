@@ -1,3 +1,6 @@
 [submodule "HyperQO"]
 	path = HyperQO
 	url = https://github.com/MaYangrui6/HyperQO
+[submodule "QPE"]
+	path = QPE
+	url = https://github.com/MaYangrui6/QPE.git

@@ -66,7 +66,7 @@ random.seed(0)
 
 train = pd.read_csv('/mcts/QPE/information/train.csv', index_col=0)
 plan = pd.read_csv('/mcts/QPE/information/query_plans.csv')
-queries = train['query'].values
+queries = train['workload'].values
 plans_json = plan["plan"].values
 
 tree_builder = TreeBuilder()
@@ -166,7 +166,7 @@ def get_password():
 
 
 def is_valid_statement(conn, statement):
-    """Determine if the query is correct by whether the executor throws an exception."""
+    """Determine if the workload is correct by whether the executor throws an exception."""
     queries = get_prepare_sqls(statement)
     res = conn.execute_sqls(queries)
     # Rpc executor return [] if  the statement is not executed successfully.
@@ -317,7 +317,7 @@ class IndexAdvisor:
                     bar_print(f'\t\t{created_index.get_indexdef()}')
                     existing_indexes.append(created_index.get_indexdef())
 
-            bar_print('\tImproved query:')
+            bar_print('\tImproved workload:')
             # get benefit rate for subsequent sorting and display
             query_benefit_rate = []
             for query in sorted(index.get_positive_queries(), key=lambda query: -query.get_benefit()):
@@ -325,7 +325,7 @@ class IndexAdvisor:
                 current_cost = self.workload.get_indexes_cost_of_query(query, tuple([index]))
                 query_improved_rate = (query_origin_cost - current_cost) / current_cost
                 query_benefit_rate.append((query, query_improved_rate))
-            # sort query by benefit rate
+            # sort workload by benefit rate
             for j, (query, query_improved_rate) in enumerate(sorted(query_benefit_rate, key=lambda x: -x[1])):
                 other_related_indexes = []
                 bar_print(f'\t\tQuery {j}: {query.get_statement()}')
@@ -334,8 +334,8 @@ class IndexAdvisor:
                 query_benefit = query_origin_cost - current_cost
                 origin_plan = self.workload.get_indexes_plan_of_query(query, None)
                 current_plan = self.workload.get_indexes_plan_of_query(query, tuple([index]))
-                bar_print('\t\t\tCost benefit for the query: %.2f' % query_benefit)
-                bar_print('\t\t\tCost improved rate for the query: %.2f%%' % (query_improved_rate * 100))
+                bar_print('\t\t\tCost benefit for the workload: %.2f' % query_benefit)
+                bar_print('\t\t\tCost improved rate for the workload: %.2f%%' % (query_improved_rate * 100))
                 bar_print(f'\t\t\tQuery number: {int(query.get_frequency())}')
                 if len(query.get_indexes()) > 1:
                     bar_print('\t\t\tOther optimal indexes:')
@@ -344,7 +344,7 @@ class IndexAdvisor:
                             continue
                         bar_print(f'\t\t\t\t{temp_index.get_index_statement()}')
                         other_related_indexes.append(temp_index.get_index_statement())
-                improved_queries.append({'query': query.get_statement(),
+                improved_queries.append({'workload': query.get_statement(),
                                          'query_benefit': query_benefit,
                                          'query_improved_rate': query_improved_rate,
                                          'query_count': int(query.get_frequency()),
@@ -1230,7 +1230,7 @@ def index_advisor_workload(history_advise_indexes, executor: BaseExecutor, workl
         if not is_valid_statement(executor,sql.get_statement()):
             print(sql.get_statement())
     queries = [query for query in queries if is_valid_statement(executor, query.get_statement())]
-    print('query number :',len(queries))
+    print('workload number :',len(queries))
     queries_potential_ratio = [get_query_potential_ratio_from_model1(sql.get_statement()) for sql in queries]
 
     plans = [pgrunner.getCostPlanJson(sql.get_statement()) for sql in queries]
@@ -1335,7 +1335,7 @@ def main(argv):
     arg_parser.add_argument(
         "-U", "--db-user", help="Username for database log-in", action=CheckWordValid)
     arg_parser.add_argument(
-        "file", type=path_type, help="File containing workload queries (One query per line)", action=CheckWordValid)
+        "file", type=path_type, help="File containing workload queries (One workload per line)", action=CheckWordValid)
     arg_parser.add_argument("--schema", help="Schema name for the current business data",
                             required=True, action=CheckWordValid)
     arg_parser.add_argument(

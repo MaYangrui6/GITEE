@@ -153,7 +153,7 @@ def parse_explain_plan(results, query_num):
     plans.append(plan)
     plans = plans[1:]
 
-    # when a syntax error causes multiple explain queries to be run as one query
+    # when a syntax error causes multiple explain queries to be run as one workload
     while len(index_names_list) < query_num:
         index_names_list.append([])
         plans.append([])

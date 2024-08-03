@@ -132,10 +132,6 @@ class State(object):
         self.available_choices.remove(random_choice)
         choice = copy.copy(self.accumulation_choices)
         choice.append(random_choice)
-        # benefit = find_best_benefit(choice) + self.current_benefit
-        # If the current choice does not satisfy restrictions, then continue to get the next choice.
-        # if benefit <= self.current_benefit or \
-        #         self.current_storage + random_choice.get_storage() > STORAGE_THRESHOLD:
         if self.current_storage + random_choice.get_storage() > STORAGE_THRESHOLD:
             return self.get_next_state_with_random_choice()
 

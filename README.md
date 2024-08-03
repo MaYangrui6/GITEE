@@ -13,8 +13,8 @@ Extensive experiments demonstrate that GITEE outperforms state-of-the-art index 
 
 ## Key Components
 
-### 1. Normalized Potential Estimator (NPE)
-NPE is a deep learning model that estimates the maximum potential improvement an index can bring to a query. It uses query plan and predicate information to generate accurate estimates without actually building indexes.
+### 1. Normalized Potential Estimator (QPE)
+QPE is a deep learning model that estimates the maximum potential improvement an index can bring to a query. It uses query plan and predicate information to generate accurate estimates without actually building indexes.
 
 ### 2. Workload Filtering
 By estimating the gain of each query, GITEE filters out redundant queries, significantly reducing the search space and focusing on essential queries that contribute most to performance improvements.
@@ -27,4 +27,4 @@ GITEE uses Monte Carlo Tree Search to efficiently explore the space of possible 
 To install the required dependencies, run:
 
 ```bash
-python index_advisor_workload.py 5432 indexselection_tpch___10 --db-host 127.0.0.1 --db-user postgres hyper.sql --schema public --max-index-num 10 --max-index-storage 3000 --multi-iter-mode --min-improved-rate 0.000002 --driver
+python index_advisor_workload.py 5432 indexselection_tpch___10 --db-host 127.0.0.1 --db-user postgres queries.sql --schema public --max-index-num 10 --max-index-storage 3000 --multi-iter-mode --min-improved-rate 0.000002 --driver

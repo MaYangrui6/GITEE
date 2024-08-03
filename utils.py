@@ -566,9 +566,9 @@ class WorkLoad:
 
     @lru_cache(maxsize=None)
     def is_positive_query(self, index: AdvisedIndex, query: QueryItem):
-        logging.info(f'index ：{index}，query :{query}')
+        logging.info(f'index ：{index}，workload :{query}')
         logging.info(
-            f'self.get_origin_cost_of_query(query ：{self.get_origin_cost_of_query(query)}，self.get_indexes_cost_of_query(query, tuple([index])) :{self.get_indexes_cost_of_query(query, tuple([index]))}')
+            f'self.get_origin_cost_of_query(workload ：{self.get_origin_cost_of_query(query)}，self.get_indexes_cost_of_query(workload, tuple([index])) :{self.get_indexes_cost_of_query(query, tuple([index]))}')
         return self.get_origin_cost_of_query(query) > self.get_indexes_cost_of_query(query, tuple([index]))
 
     def add_indexes(self, indexes: (Tuple[AdvisedIndex], None), costs, index_names, plan_list):
