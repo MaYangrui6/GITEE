@@ -16,7 +16,7 @@ Extensive experiments demonstrate that GITEE outperforms state-of-the-art index 
 ### 1. Query Potential Estimator (QPE)
 QPE is a deep learning model that estimates the maximum potential improvement an index can bring to a query. It uses query plan and predicate information to generate accurate estimates without actually building indexes.
 
-### 2. Workload Filtering
+### 2. Query Filtering
 By estimating the gain of each query, GITEE filters out redundant queries, significantly reducing the search space and focusing on essential queries that contribute most to performance improvements.
 
 ### 3. MCTS-Based Index Selection
