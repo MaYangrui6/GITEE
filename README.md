@@ -27,6 +27,8 @@ GITEE uses Monte Carlo Tree Search to efficiently explore the space of possible 
 To install the required dependencies, run:
 
 ```bash
+pip install -r requirements.txt
+
 python index_advisor_workload.py 5432 indexselection_tpch___10 --db-host 127.0.0.1 --db-user postgres queries.sql --schema public --max-index-num 10 --max-index-storage 3000 --multi-iter-mode --min-improved-rate 0.000002 --driver
 ```
 
