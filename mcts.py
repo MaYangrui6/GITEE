@@ -3,6 +3,10 @@ import math
 import random
 import copy
 import logging
+
+
+
+import numpy as np
 from collections import defaultdict
 from utils import infer_workload_benefit
 
@@ -141,6 +145,73 @@ class State(object):
         # next_state.set_current_benefit(benefit)
         next_state.set_current_storage(self.current_storage + random_choice.get_storage())
         next_state.set_available_choices(get_diff(AVAILABLE_CHOICES, choice))
+        return next_state
+
+    def get_next_state_with_boltzmann_choice(self):
+        # Ensure that the choices taken are not repeated.
+        if not self.available_choices:
+            return None
+
+        # Calculate Boltzmann probabilities based on benefits (or any other criteria)
+        benefits = np.array([index.get_index_potential_average() for index in self.available_choices])
+
+        TEMPERATURE=len(self.accumulation_choices)
+        probabilities = np.exp(benefits / TEMPERATURE) / np.sum(np.exp(benefits / TEMPERATURE))
+
+        # Select a choice directly based on Boltzmann distribution
+        random_choice = np.random.choice(self.available_choices, p=probabilities)
+
+        self.available_choices.remove(random_choice)
+        choice = copy.copy(self.accumulation_choices)
+        choice.append(random_choice)
+
+        if self.current_storage + random_choice.get_storage() > STORAGE_THRESHOLD:
+            return self.get_next_state_with_boltzmann_choice()
+
+        next_state = State()
+        # Initialize the properties of the new state.
+        next_state.set_accumulation_choices(choice)
+        next_state.set_current_storage(self.current_storage + random_choice.get_storage())
+        next_state.set_available_choices(get_diff(AVAILABLE_CHOICES, choice))
+
+        return next_state
+
+    def get_next_state_expend_with_benefit_threshold(self,thre=0.75):
+        # Ensure that the choices taken are not repeated.
+        if not self.available_choices:
+            return None
+
+        # Calculate benefits based on index potential average
+        benefits = np.array([index.get_index_potential_average() for index in self.available_choices])
+
+        # Sort indices by benefits in descending order
+        sorted_indices = np.argsort(benefits)[::-1]
+
+        # Select choices until the sum of benefits exceeds 75%
+        cumulative_benefit = 0
+        selected_choices = []
+        for idx in sorted_indices:
+            cumulative_benefit += benefits[idx]
+            selected_choices.append(self.available_choices[idx])
+            if cumulative_benefit >= thre * np.sum(benefits):
+                break
+
+        # Select the choice with the highest benefit
+        random_choice = selected_choices[0]  # Select the top choice
+
+        self.available_choices.remove(random_choice)
+        choice = copy.copy(self.accumulation_choices)
+        choice.append(random_choice)
+
+        if self.current_storage + random_choice.get_storage() > STORAGE_THRESHOLD:
+            return self.get_next_state_expend_with_benefit_threshold()
+
+        next_state = State()
+        # Initialize the properties of the new state.
+        next_state.set_accumulation_choices(choice)
+        next_state.set_current_storage(self.current_storage + random_choice.get_storage())
+        next_state.set_available_choices(get_diff(AVAILABLE_CHOICES, choice))
+
         return next_state
 
     def __repr__(self):
@@ -285,7 +356,7 @@ def default_policy(node):
     # Run until the game is over.
     while not current_state.is_terminal():
         # Pick one random action to play and get the next state.
-        next_state = current_state.get_next_state_with_random_choice()
+        next_state = current_state.get_next_state_with_boltzmann_choice()
         if not next_state:
             break
         current_state = next_state
@@ -308,7 +379,7 @@ def expand(node):
      added nodes differ from other node Action.
     """
 
-    new_state = node.get_state().get_next_state_with_random_choice()
+    new_state = node.get_state().get_next_state_expend_with_benefit_threshold()
     if not new_state:
         return None
     sub_node = Node()

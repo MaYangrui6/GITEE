@@ -12,8 +12,8 @@ from sqlparse.sql import Function, Parenthesis, IdentifierList
 from sql_metadata import Parser
 import sqlparse
 
-from HyperQO.sql_feature.bag_of_predicates import BagOfPredicates
-from HyperQO.sql_feature.utils import build_similarity_index, embed_queries_and_plans
+from QPE.sql_feature.bag_of_predicates import BagOfPredicates
+from QPE.sql_feature.utils import build_similarity_index, embed_queries_and_plans
 
 COLUMN_DELIMITER = ', '
 QUERY_PLAN_SUFFIX = 'QUERY PLAN'
@@ -416,7 +416,7 @@ class WorkLoad:
     def get_query_benefit(self) -> dict:
         return self.__query_to_benefit
 
-    def get_m_largest_sum_with_indices(self, threshold=0.8):
+    def get_m_largest_sum_with_indices(self, threshold=1):
         nums_with_indices = list(enumerate(self.get_query_potential()))  # 列表中每个数和其对应的索引
         nums_with_indices_sorted = sorted(nums_with_indices, key=lambda x: x[1], reverse=True)  # 按数值降序排序
         half_max_indices_num = len(nums_with_indices) // 5

@@ -20,13 +20,13 @@ import os
 import random
 import torch
 import sys
-from HyperQO.ImportantConfig import Config
-from HyperQO.sql2fea import TreeBuilder
-from HyperQO.NET import TreeNet
-from HyperQO.TreeLSTM import SPINN
-from HyperQO.PGUtils import pgrunner
+from QPE.ImportantConfig import Config
+from QPE.sql2fea import TreeBuilder
+from QPE.NET import TreeNet
+from QPE.TreeLSTM import SPINN
+from QPE.PGUtils import pgrunner
 import pandas as pd
-from HyperQO.sql_feature.workload_embedder import PredicateEmbedderDoc2Vec
+from QPE.sql_feature.workload_embedder import PredicateEmbedderDoc2Vec
 
 
 try:
@@ -50,7 +50,6 @@ except ImportError:
     from sql_generator import get_single_advisor_sql, get_index_check_sqls, get_existing_index_sql, \
         get_workload_cost_sqls, get_index_setting_sqls, get_prepare_sqls, get_hypo_index_head_sqls
     from executors.common import BaseExecutor
-    from executors.gsql_executor import GsqlExecutor
     from mcts import MCTS
     from table import get_table_context
     from utils import match_table_name, IndexItemFactory, \
@@ -64,8 +63,8 @@ except ImportError:
 config = Config()
 random.seed(0)
 
-train = pd.read_csv('/mcts/QPE/information/train.csv', index_col=0)
-plan = pd.read_csv('/mcts/QPE/information/query_plans.csv')
+train = pd.read_csv('/home/ubuntu/project/mcts/QPE/information/train.csv', index_col=0)
+plan = pd.read_csv('/home/ubuntu/project/mcts/QPE/information/query_plans.csv')
 queries = train['workload'].values
 plans_json = plan["plan"].values
 
@@ -76,7 +75,7 @@ value_network = SPINN(head_num=config.head_num, input_size=36, hidden_size=confi
 value_network.load_state_dict((torch.load('/home/ubuntu/project/mcts/QPE/models/2024-07-29_20-07-10/model_value_network.pth')))
 treenet_model = TreeNet(tree_builder, value_network)
 
-sql_embedder_path = os.path.join("/mcts/QPE/information/", "embedder.pth")
+sql_embedder_path = os.path.join("/home/ubuntu/project/mcts/QPE/information/", "embedder.pth")
 sql_embedder = PredicateEmbedderDoc2Vec(queries[:], plans_json, 20, database_runner=pgrunner,
                                         file_name=sql_embedder_path)
 
